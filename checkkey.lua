@@ -1,89 +1,34 @@
-local HttpService = game:GetService("HttpService")local Player = game.Players.LocalPlayerlocal WebAppUrl = "https://script.google.com/macros/s/AKfycbxRp045AjiWfZqkDRHnqFpsgRkYOIqUtkxGGXSL4ILN9vS5LtqdXDlyVVnt4MnEpI2E/exec"-- Hàm lấy HWID của máylocal function GetHWID()
+local WebAppUrl = "LINK_WEB_APP_MỚI_CỦA_BẠN"
 
-    return game:GetService("RbxAnalyticsService"):GetClientId()end-- Hàm thực hiện Check Keylocal function VerifyDatabase()
-
-    local inputKey = getgenv().Key
-
-    local currentHWID = GetHWID()
-
-
-
-    -- BƯỚC 1: Chặn ngay nếu không nhập key
-
-    if inputKey == "" or inputKey == nil then
-
-        Player:Kick("\n[Sigma Hub]\nLỖI: Bạn chưa nhập Key vào dòng getgenv().Key!")
-
-        return
-
+local function Verify()
+    if getgenv().Key == "" then 
+        game.Players.LocalPlayer:Kick("\n[Sigma Hub]\nVui lòng điền Key vào config!") 
+        return 
     end
 
-
-
-    -- BƯỚC 2: Gửi dữ liệu lên Google Sheets để kiểm tra
-
-    -- Hỗ trợ tất cả các Executor (Synapse, Delta, Arceus, Fluxus,...)
-
-    local requestFunc = (syn and syn.request) or (http and http.request) or request or http_request
-
+    local hwid = game:GetService("RbxAnalyticsService"):GetClientId()
+    local url = WebAppUrl .. "?key=" .. getgenv().Key .. "&hwid=" .. hwid
     
-
-    local success, response = pcall(function()
-
-        return requestFunc({
-
-            Url = WebAppUrl,
-
-            Method = "POST",
-
-            Headers = {["Content-Type"] = "application/json"},
-
-            Body = HttpService:JSONEncode({
-
-                key = inputKey,
-
-                hwid = currentHWID
-
-            })
-
-        })
-
+    local success, result = pcall(function()
+        return game:HttpGet(url)
     end)
 
-
-
-    -- BƯỚC 3: Xử lý kết quả trả về từ Google Sheets
-
-    if success and response.StatusCode == 200 then
-
-        local data = HttpService:JSONDecode(response.Body)
-
-        
-
+    if success then
+        local data = game:GetService("HttpService"):JSONDecode(result)
         if data.success then
-
-            print("Xác thực thành công! HWID: " .. currentHWID)
-
+            print("==============================")
+            print("Xác thực thành công!")
+            print("Hạn dùng: " .. data.message)
+            print("==============================")
             
-
-            -- CHỈ KHI DATABASE TRẢ VỀ SUCCESS MỚI LOAD SCRIPT
-
+            -- LOAD SOURCE CHÍNH
             loadstring(game:HttpGet("https://raw.githubusercontent.com/nhantran11325-netizen/test-kaitun/refs/heads/main/Neon.txt"))()
-
         else
-
-            -- Kick nếu Key sai hoặc HWID không khớp
-
-            Player:Kick("\n[Sigma Hub Error]\n" .. (data.message or "Xác thực thất bại!"))
-
+            game.Players.LocalPlayer:Kick("\n[Sigma Hub Error]\n" .. data.message)
         end
-
     else
+        game.Players.LocalPlayer:Kick("\n[Lỗi kết nối]\nKhông thể gửi yêu cầu tới Database!")
+    end
+end
 
-        -- Lỗi kết nối đến Google App Script
-
-        Player:Kick("\n[Sigma Hub Error]\nKhông thể kết nối đến Database. Vui lòng thử lại sau!")
-
-    endend-- Khởi chạy tiến trình kiểm tra
-
-VerifyDatabase()
+Verify()
