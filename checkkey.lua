@@ -1,4 +1,4 @@
-local WebAppUrl = "LINK_WEB_APP_MỚI_CỦA_BẠN"
+local WebAppUrl = "https://script.google.com/macros/s/AKfycbx7BbJAxuCGGYl1YPpMfl0T9_mfdbp1vryt3zivfV5KfriQiC0pKJVHLf44VNPthCtY/exec"
 
 local function Verify()
     if getgenv().Key == "" then 
