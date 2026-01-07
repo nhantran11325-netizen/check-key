@@ -1,72 +1,95 @@
--- [[ CHECKKEY.LUA - HỆ THỐNG XÁC THỰC CỦA Neon HUB ]]
-
+-- [[ CHECKKEY.LUA - WEBHOOK CONFIGURABLE ]]
 local HttpService = game:GetService("HttpService")
 local Player = game.Players.LocalPlayer
--- LINK WEB APP CỦA BẠN (Dùng link Apps Script mới nhất đã Deploy)
+local StartTime = os.time()
+
+-- Web App & Script URL
 local WebAppUrl = "https://script.google.com/macros/s/AKfycbywblsMG_dj9XsRtdC-E9BPzZk6NgIO7avGOTWFINm70dBVj6CioSgvQQDj1R9VBkkJ/exec"
--- LINK SCRIPT CHÍNH (Neon.txt)
 local ScriptUrl = "https://api.junkie-development.de/api/v1/luascripts/public/c052c97909dcfb35fd4be16f305031c3f19eaf127516dfc7f2da361939d1e4d4/download"
 
-local function Verify()
-    -- 1. Kiểm tra xem Loader đã truyền Key vào chưa
-    local inputKey = getgenv().Key
-    if not inputKey or inputKey == "" then
-        Player:Kick("\n[Neon Hub]\nLỖI: Thiếu Key! Vui lòng nhập Key vào Loader.")
-        return
-    end
-
-    -- 2. Lấy HWID
-    local hwid = game:GetService("RbxAnalyticsService"):GetClientId()
-    local checkUrl = WebAppUrl .. "?key=" .. tostring(inputKey) .. "&hwid=" .. tostring(hwid)
-
-    print("[Neon Hub] Đang kiểm tra Key...")
-
-    -- 3. Gửi yêu cầu xác thực
+-- Hàm lấy trái ác quỷ
+local function GetFruits()
     local success, result = pcall(function()
-        return game:HttpGet(checkUrl)
+        local inventory = game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("getInventory")
+        local fruits = {}
+        for _, v in pairs(inventory) do
+            if v.Type == "Fruit" then table.insert(fruits, v.Name) end
+        end
+        return #fruits > 0 and table.concat(fruits, ", ") or "Không có"
     end)
+    return success and result or "Lỗi lấy túi đồ"
+end
+
+-- Hàm gửi Webhook
+local function SendWebhook(type)
+    local url = getgenv().WebhookUrl
+    if not url or url == "" then return end -- Nếu không điền thì không gửi
+
+    local stats = Player:FindFirstChild("Data")
+    if not stats then return end
+
+    local diff = os.time() - StartTime
+    local uptime = string.format("%d phút %d giây", math.floor(diff / 60), diff % 60)
+
+    local data = {
+        ["embeds"] = {{
+            ["title"] = "📊 BÁO CÁO SIGMA HUB [" .. type .. "]",
+            ["color"] = type == "LOGIN" and 65280 or 16776960,
+            ["fields"] = {
+                {["name"] = "👤 Player", ["value"] = "||" .. Player.Name .. "||", ["inline"] = true},
+                {["name"] = "🆙 Level", ["value"] = tostring(stats.Level.Value), ["inline"] = true},
+                {["name"] = "💰 Beli", ["value"] = tostring(stats.Beli.Value), ["inline"] = true},
+                {["name"] = "💎 Fragment", ["value"] = tostring(stats.Fragments.Value), ["inline"] = true},
+                {["name"] = "🍎 Inventory", ["value"] = GetFruits(), ["inline"] = false},
+                {["name"] = "⏳ Uptime", ["value"] = uptime, ["inline"] = true},
+                {["name"] = "🔑 Key", ["value"] = "||" .. getgenv().Key .. "||", ["inline"] = true},
+            },
+            ["footer"] = {["text"] = "Sigma Tracking • " .. os.date("%X")},
+            ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%SZ")
+        }}
+    }
+
+    pcall(function()
+        request({
+            Url = url,
+            Method = "POST",
+            Headers = {["Content-Type"] = "application/json"},
+            Body = HttpService:JSONEncode(data)
+        })
+    end)
+end
+
+-- Xác thực
+local function Verify()
+    local k = getgenv().Key
+    if not k or k == "" then Player:Kick("Thiếu Key!") return end
+
+    local url = WebAppUrl .. "?key=" .. k .. "&hwid=" .. game:GetService("RbxAnalyticsService"):GetClientId()
+    local success, res = pcall(function() return game:HttpGet(url) end)
 
     if success then
-        -- Chống lỗi Parse JSON nếu Google trả về HTML
-        local isJson, data = pcall(function() return HttpService:JSONDecode(result) end)
-        
-        if isJson then
-            if data.success then
-                -- [ THÀNH CÔNG ]
-                print("========================================")
-                print("XÁC THỰC THÀNH CÔNG!")
-                print("Hạn dùng: " .. tostring(data.message))
-                print("========================================")
+        local isJson, data = pcall(function() return HttpService:JSONDecode(res) end)
+        if isJson and data.success then
+            -- Gửi login webhook
+            SendWebhook("LOGIN")
 
-                -- Kiểm tra xem Config đã có chưa, nếu chưa thì tạo bảng rỗng để tránh lỗi script chính
-                if not getgenv().Configs then
-                    getgenv().Configs = {}
-                    warn("[Neon Hub] Không tìm thấy Config từ Loader, sử dụng mặc định.")
+            -- Gửi update webhook theo thời gian tùy chỉnh
+            task.spawn(function()
+                local delayTime = getgenv().WebhookDelay or 60
+                while task.wait(delayTime) do
+                    SendWebhook("UPDATE")
                 end
+            end)
 
-                -- 4. Tải script chính (Neon.txt)
-                local loadSuccess, scriptContent = pcall(function()
-                    return game:HttpGet(ScriptUrl)
-                end)
-
-                if loadSuccess then
-                    print("[Neon Hub] Đang khởi tạo script chính...")
-                    loadstring(scriptContent)()
-                else
-                    Player:Kick("\n[Neon Hub Error]\nKhông thể tải script chính từ Server!")
-                end
-            else
-                -- [ THẤT BẠI: Sai Key/Hết hạn/HWID ]
-                Player:Kick("\n[Neon Hub Error]\n" .. tostring(data.message))
-            end
+            -- Load script chính
+            if not getgenv().Configs then getgenv().Configs = {} end
+            loadstring(game:HttpGet(ScriptUrl))()
         else
-            warn("[Neon Hub] Phản hồi từ Server không hợp lệ (JSON Error).")
-            print("Response: " .. tostring(result))
+            Player:Kick("\n[Sigma Hub]\n" .. (data and data.message or "Lỗi xác thực"))
         end
     else
-        Player:Kick("\n[Neon Hub Error]\nKhông thể kết nối tới Database!")
+        Player:Kick("\n[Sigma Hub]\nLỗi kết nối Server!")
     end
 end
 
--- Chạy hàm xác thực
 Verify()
