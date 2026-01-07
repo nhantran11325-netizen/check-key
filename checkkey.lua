@@ -1,4 +1,4 @@
--- [[ CHECKKEY.LUA - HỆ THỐNG XÁC THỰC CỦA SIGMA HUB ]]
+-- [[ CHECKKEY.LUA - HỆ THỐNG XÁC THỰC CỦA Neon HUB ]]
 
 local HttpService = game:GetService("HttpService")
 local Player = game.Players.LocalPlayer
@@ -11,7 +11,7 @@ local function Verify()
     -- 1. Kiểm tra xem Loader đã truyền Key vào chưa
     local inputKey = getgenv().Key
     if not inputKey or inputKey == "" then
-        Player:Kick("\n[Sigma Hub]\nLỖI: Thiếu Key! Vui lòng nhập Key vào Loader.")
+        Player:Kick("\n[Neon Hub]\nLỖI: Thiếu Key! Vui lòng nhập Key vào Loader.")
         return
     end
 
@@ -19,7 +19,7 @@ local function Verify()
     local hwid = game:GetService("RbxAnalyticsService"):GetClientId()
     local checkUrl = WebAppUrl .. "?key=" .. tostring(inputKey) .. "&hwid=" .. tostring(hwid)
 
-    print("[Sigma Hub] Đang kiểm tra Key...")
+    print("[Neon Hub] Đang kiểm tra Key...")
 
     -- 3. Gửi yêu cầu xác thực
     local success, result = pcall(function()
@@ -41,7 +41,7 @@ local function Verify()
                 -- Kiểm tra xem Config đã có chưa, nếu chưa thì tạo bảng rỗng để tránh lỗi script chính
                 if not getgenv().Configs then
                     getgenv().Configs = {}
-                    warn("[Sigma Hub] Không tìm thấy Config từ Loader, sử dụng mặc định.")
+                    warn("[Neon Hub] Không tìm thấy Config từ Loader, sử dụng mặc định.")
                 end
 
                 -- 4. Tải script chính (Neon.txt)
@@ -50,21 +50,21 @@ local function Verify()
                 end)
 
                 if loadSuccess then
-                    print("[Sigma Hub] Đang khởi tạo script chính...")
+                    print("[Neon Hub] Đang khởi tạo script chính...")
                     loadstring(scriptContent)()
                 else
-                    Player:Kick("\n[Sigma Hub Error]\nKhông thể tải script chính từ Server!")
+                    Player:Kick("\n[Neon Hub Error]\nKhông thể tải script chính từ Server!")
                 end
             else
                 -- [ THẤT BẠI: Sai Key/Hết hạn/HWID ]
-                Player:Kick("\n[Sigma Hub Error]\n" .. tostring(data.message))
+                Player:Kick("\n[Neon Hub Error]\n" .. tostring(data.message))
             end
         else
-            warn("[Sigma Hub] Phản hồi từ Server không hợp lệ (JSON Error).")
+            warn("[Neon Hub] Phản hồi từ Server không hợp lệ (JSON Error).")
             print("Response: " .. tostring(result))
         end
     else
-        Player:Kick("\n[Sigma Hub Error]\nKhông thể kết nối tới Database!")
+        Player:Kick("\n[Neon Hub Error]\nKhông thể kết nối tới Database!")
     end
 end
 
