@@ -1,4 +1,4 @@
-local WebAppUrl = "https://script.google.com/macros/s/AKfycbx7BbJAxuCGGYl1YPpMfl0T9_mfdbp1vryt3zivfV5KfriQiC0pKJVHLf44VNPthCtY/exec"
+local WebAppUrl = "https://script.google.com/macros/s/AKfycbxBvMfAzYBzZUOR_3dtUQLc0SKu_6nICwSK0gYV96ZvCXqUtJGGTOk9TJJrx6LTYrbR/exec"
 
 local function Verify()
     if getgenv().Key == "" then 
