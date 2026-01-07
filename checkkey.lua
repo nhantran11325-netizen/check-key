@@ -1,34 +1,60 @@
+local HttpService = game:GetService("HttpService")
+local Player = game.Players.LocalPlayer
 local WebAppUrl = "https://script.google.com/macros/s/AKfycbxBvMfAzYBzZUOR_3dtUQLc0SKu_6nICwSK0gYV96ZvCXqUtJGGTOk9TJJrx6LTYrbR/exec"
 
-local function Verify()
-    if getgenv().Key == "" then 
-        game.Players.LocalPlayer:Kick("\n[Sigma Hub]\nVui lòng điền Key vào config!") 
-        return 
+local function GetHWID()
+    return game:GetService("RbxAnalyticsService"):GetClientId()
+end
+
+local function VerifyDatabase()
+    local inputKey = getgenv().Key
+    if inputKey == "" or inputKey == nil then
+        Player:Kick("\n[Sigma Hub]\nLỖI: Bạn chưa nhập Key!")
+        return
     end
 
-    local hwid = game:GetService("RbxAnalyticsService"):GetClientId()
-    local url = WebAppUrl .. "?key=" .. getgenv().Key .. "&hwid=" .. hwid
+    -- Gửi yêu cầu qua GET để ổn định trên Mobile
+    local checkUrl = WebAppUrl .. "?key=" .. inputKey .. "&hwid=" .. GetHWID()
     
     local success, result = pcall(function()
-        return game:HttpGet(url)
+        return game:HttpGet(checkUrl)
     end)
 
     if success then
-        local data = game:GetService("HttpService"):JSONDecode(result)
+        local data = HttpService:JSONDecode(result)
+        
         if data.success then
             print("==============================")
-            print("Xác thực thành công!")
+            print("XÁC THỰC THÀNH CÔNG!")
             print("Hạn dùng: " .. data.message)
             print("==============================")
             
-            -- LOAD SOURCE CHÍNH
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/nhantran11325-netizen/test-kaitun/refs/heads/main/Neon.txt?token=GHSAT0AAAAAADRH5HHGSU6OPRFASHP7FS642K6AAOQ"))()
+            -- [ 3. TẢI SCRIPT CHÍNH ]
+            -- Link Raw sạch (Đã xóa token để tránh lỗi 404)
+            local scriptUrl = "https://raw.githubusercontent.com/nhantran11325-netizen/test-kaitun/refs/heads/main/Neon.txt?token=GHSAT0AAAAAADRH5HHGSU6OPRFASHP7FS642K6AAOQ"
+            
+            local loadSuccess, scriptContent = pcall(function()
+                return game:HttpGet(scriptUrl)
+            end)
+
+            if loadSuccess then
+                local runSuccess, errorMsg = pcall(function()
+                    loadstring(scriptContent)()
+                end)
+                if not runSuccess then
+                    warn("Lỗi thực thi script chính: " .. tostring(errorMsg))
+                end
+            else
+                Player:Kick("\n[Sigma Hub Error]\nKhông thể tải script chính từ GitHub!\nHãy kiểm tra lại link hoặc Repo Public.")
+            end
         else
-            game.Players.LocalPlayer:Kick("\n[Sigma Hub Error]\n" .. data.message)
+            -- Kick nếu key sai, hwid mismatch hoặc hết hạn
+            Player:Kick("\n[Sigma Hub Error]\n" .. (data.message or "Xác thực thất bại!"))
         end
     else
-        game.Players.LocalPlayer:Kick("\n[Lỗi kết nối]\nKhông thể gửi yêu cầu tới Database!")
+        Player:Kick("\n[Sigma Hub Error]\nKhông thể kết nối Database Google Sheets!")
     end
 end
 
-Verify()
+-- Chạy hệ thống
+VerifyDatabase()
