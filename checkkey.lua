@@ -1,34 +1,33 @@
-local function VerifyLicense()
-    local HttpService = game:GetService("HttpService")
-    local ANYF_API = "a5cfea1a476fae28bf901a04527a50edaa06146bfa38167b16652842d2c94dcf"
-    local BaseUrl = "https://pandadevelopment.net/api/key/fetch?apiKey=" .. ANYF_API .. "&fetch=" .. getgenv().Key
+local HttpService = game:GetService("HttpService")
+local API_ANYF = "a5cfea1a476fae28bf901a04527a50edaa06146bfa38167b16652842d2c94dcf"
 
-    -- Kiểm tra nếu để trống key
-    if getgenv().Key == "" or getgenv().Key == nil then
-        game.Players.LocalPlayer:Kick("\n[Sigma Hub]\nLỗi: Bạn chưa nhập Key!")
-        return
-    end
-
-    -- Gửi yêu cầu xác thực
-    local success, response = pcall(function()
-        return game:HttpGet(BaseUrl)
-    end)
-
-    if success then
-        local data = HttpService:JSONDecode(response)
-        -- So khớp key từ server trả về với key người dùng nhập
-        if data.key and data.key.value == getgenv().Key then
-            print("Xác thực thành công! Đang khởi động Banana Cat...")
-            
-            -- CHỈ LOAD KHI KEY ĐÚNG
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/nhantran11325-netizen/test-kaitun/refs/heads/main/Neon.txt?token=GHSAT0AAAAAADRH5HHG62BBJPAG4CP6GBXW2K56NSQ"))()
-        else
-            game.Players.LocalPlayer:Kick("\n[Sigma Hub Error]\nKey sai hoặc đã hết hạn!")
-        end
-    else
-        game.Players.LocalPlayer:Kick("\n[Sigma Hub Error]\nKhông thể kết nối máy chủ xác thực!")
-    end
+-- 1. Kiểm tra nếu không nhập key
+if getgenv().Key == "" or getgenv().Key == nil then
+    game.Players.LocalPlayer:Kick("\n[LỖI]: Bạn chưa nhập Key vào dòng getgenv().Key = \"\"")
+    return -- Dừng hoàn toàn script
 end
 
--- Chạy ngầm xác thực
-VerifyLicense()
+-- 2. Gọi API để check key (Đúng vô, sai cút)
+local success, result = pcall(function()
+    return game:HttpGet("https://pandadevelopment.net/api/key/fetch?apiKey=" .. API_ANYF .. "&fetch=" .. getgenv().Key)
+end)
+
+if success then
+    local data = HttpService:JSONDecode(result)
+    
+    -- Kiểm tra tính hợp lệ của key từ dữ liệu API trả về
+    if data and data.key and data.key.value == getgenv().Key then
+        print("Xác thực thành công! Đang khởi động script chính...")
+        
+        -- LOAD SCRIPT CHÍNH (Chỉ thực thi khi key đúng)
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/nhantran11325-netizen/test-kaitun/refs/heads/main/Neon.txt?token=GHSAT0AAAAAADRH5HHG4OFZGLUBWCNEN4XA2K56R4Q"))()
+    else
+        -- Key sai hoặc hết hạn
+        game.Players.LocalPlayer:Kick("\n[Sigma Hub]: Key sai hoặc đã hết hạn!")
+        return
+    end
+else
+    -- Lỗi API hoặc lỗi mạng
+    game.Players.LocalPlayer:Kick("\n[Sigma Hub]: Lỗi kết nối Server Xác Thực!")
+    return
+end
