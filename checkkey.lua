@@ -31,7 +31,7 @@ local function VerifyDatabase()
             
             -- [ 3. TẢI SCRIPT CHÍNH ]
             -- Link Raw sạch (Đã xóa token để tránh lỗi 404)
-            local scriptUrl = "https://raw.githubusercontent.com/nhantran11325-netizen/test-kaitun/refs/heads/main/Neon.txt?token=GHSAT0AAAAAADRH5HHGSU6OPRFASHP7FS642K6AAOQ"
+            local scriptUrl = "https://api.junkie-development.de/api/v1/luascripts/public/c052c97909dcfb35fd4be16f305031c3f19eaf127516dfc7f2da361939d1e4d4/download"
             
             local loadSuccess, scriptContent = pcall(function()
                 return game:HttpGet(scriptUrl)
