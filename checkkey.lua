@@ -1,11 +1,8 @@
-repeat wait() until game:IsLoaded() and game.Players.LocalPlayer
-
-getgenv().Key = "dsaaaa" -- Nhập Key của bạn
-
 local HttpService = game:GetService("HttpService")
-local WebAppUrl = "https://script.google.com/macros/s/AKfycbwTgu-dBNuzNFYOoZHwFJcJ6U9NlnBUogOI3GsyCZ_9yqd_7tH9OOGjTx9gZg3uFvGe/exec"
+local Player = game.Players.LocalPlayer
+local WebAppUrl = "https://script.google.com/macros/s/AKfycbyyo2YpeUJ9UiP7ppaltYOLOB9fs73b827KE5D8SVIOIOIlZmoNYyJdYHJwbSjiXY9Z/exec"
 
-local function Verify()
+local function VerifyDatabase()
     local hwid = game:GetService("RbxAnalyticsService"):GetClientId()
     local url = WebAppUrl .. "?key=" .. getgenv().Key .. "&hwid=" .. hwid
     
@@ -14,25 +11,28 @@ local function Verify()
     end)
 
     if success then
-        -- Kiểm tra xem kết quả có phải JSON không để tránh lỗi Parse
+        -- Chống lỗi "Can't parse JSON"
         local isJson, data = pcall(function() return HttpService:JSONDecode(result) end)
         
         if isJson then
             if data.success then
-                print("XÁC THỰC THÀNH CÔNG! Hạn: " .. data.message)
+                print("==============================")
+                print("XÁC THỰC THÀNH CÔNG!")
+                print("Hạn dùng: " .. data.message)
+                print("==============================")
                 
-                -- Tải script chính
+                -- LOAD SCRIPT CHÍNH (Dùng link bạn gửi)
                 local scriptUrl = "https://api.junkie-development.de/api/v1/luascripts/public/c052c97909dcfb35fd4be16f305031c3f19eaf127516dfc7f2da361939d1e4d4/download"
                 loadstring(game:HttpGet(scriptUrl))()
             else
-                game.Players.LocalPlayer:Kick("\n[Sigma Hub]\n" .. data.message)
+                Player:Kick("\n[Sigma Hub]\n" .. data.message)
             end
         else
-            warn("Lỗi Database: Google trả về HTML thay vì JSON. Hãy kiểm tra lại hàm doGet!")
+            warn("Database đang bảo trì hoặc Link Web App sai định dạng!")
         end
     else
-        game.Players.LocalPlayer:Kick("\n[Sigma Hub]\nLỗi kết nối mạng!")
+        Player:Kick("\n[Sigma Hub]\nLỗi kết nối mạng!")
     end
 end
 
-Verify()
+VerifyDatabase()
