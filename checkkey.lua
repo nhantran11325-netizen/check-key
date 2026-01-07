@@ -22,7 +22,7 @@ local function Verify()
             print("==============================")
             
             -- LOAD SOURCE CHÍNH
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/nhantran11325-netizen/test-kaitun/refs/heads/main/Neon.txt"))()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/nhantran11325-netizen/test-kaitun/refs/heads/main/Neon.txt?token=GHSAT0AAAAAADRH5HHGSU6OPRFASHP7FS642K6AAOQ"))()
         else
             game.Players.LocalPlayer:Kick("\n[Sigma Hub Error]\n" .. data.message)
         end
