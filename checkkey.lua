@@ -1,66 +1,55 @@
 local HttpService = game:GetService("HttpService")
-local Players = game:GetService("Players")
+local Player = game.Players.LocalPlayer
 
-local ANYF_API = "a5cfea1a476fae28bf901a04527a50edaa06146bfa38167b16652842d2c94dcf"
-local BASE_URL = "https://pandadevelopment.net"
+-- Link Web App Google của bạn
+local WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxRp045AjiWfZqkDRHnqFpsgRkYOIqUtkxGGXSL4ILN9vS5LtqdXDlyVVnt4MnEpI2E/exec"
 
--- ===== GET KEY (ĐỒNG BỘ VỚI LOADER) =====
-local USER_KEY = getgenv().CheckKey
-if not USER_KEY or USER_KEY == "" then
-    Players.LocalPlayer:Kick("\n[Sigma Hub]\nLỗi: Bạn chưa nhập Key!")
-    return
+local function GetHWID()
+    return game:GetService("RbxAnalyticsService"):GetClientId()
 end
 
--- ===== CHECK LICENSE =====
-local function CheckLicense()
-    local url =
-        BASE_URL ..
-        "/api/key/fetch?apiKey=" .. ANYF_API ..
-        "&fetch=" .. USER_KEY
+local function CheckDatabase()
+    local userKey = getgenv().Key
+    local userHWID = GetHWID()
 
-    local res = syn.request({
-        Url = url,
-        Method = "GET"
-    })
-
-    if not res then
-        return false, "Không có phản hồi từ API"
+    -- Chặn nếu key trống
+    if userKey == "" or userKey == nil then
+        Player:Kick("\n[Sigma Hub]\nLỗi: Vui lòng nhập Key!")
+        return
     end
 
-    if res.StatusCode ~= 200 then
-        return false, "HTTP Error: "..res.StatusCode
-    end
-
-    local data
-    local ok = pcall(function()
-        data = HttpService:JSONDecode(res.Body)
+    -- Gửi yêu cầu kiểm tra tới Google Sheets (Sử dụng POST)
+    local requestFunc = (syn and syn.request) or (http and http.request) or request or http_request
+    
+    local success, response = pcall(function()
+        return requestFunc({
+            Url = WEB_APP_URL,
+            Method = "POST",
+            Headers = {["Content-Type"] = "application/json"},
+            Body = HttpService:JSONEncode({
+                key = userKey,
+                hwid = userHWID
+            })
+        })
     end)
 
-    if not ok or not data or not data.key then
-        return false, "Key không hợp lệ"
-    end
-
-    -- Check hết hạn
-    if data.key.expiresAt then
-        local exp = DateTime.fromIsoDate(data.key.expiresAt).UnixTimestamp
-        if os.time() > exp then
-            return false, "Key đã hết hạn"
+    if success and response.StatusCode == 200 then
+        local data = HttpService:JSONDecode(response.Body)
+        
+        if data.success then
+            print("Xác thực thành công! Đang tải script...")
+            
+            -- LOAD SOURCE CHÍNH (Chỉ chạy khi Google Sheets trả về Success)
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/nhantran11325-netizen/test-kaitun/refs/heads/main/Neon.txt"))()
+        else
+            -- Key sai, HWID sai hoặc Key hết hạn
+            Player:Kick("\n[Sigma Hub Error]\n" .. (data.message or "Xác thực thất bại!"))
         end
+    else
+        -- Lỗi kết nối Web App
+        Player:Kick("\n[Sigma Hub Error]\nKhông thể kết nối Database Google Sheets!")
     end
-
-    return true
 end
 
--- ===== RUN CHECK =====
-local valid, err = CheckLicense()
-if not valid then
-    Players.LocalPlayer:Kick("\n[Sigma Hub Error]\n"..tostring(err))
-    return
-end
-
-print("✅ Xác thực thành công – đang tải script...")
-
--- ===== LOAD SCRIPT CHÍNH =====
-loadstring(game:HttpGet(
-    "https://raw.githubusercontent.com/nhantran11325-netizen/test-kaitun/refs/heads/main/Neon.txt"
-))()
+-- Chạy xác thực
+CheckDatabase()
